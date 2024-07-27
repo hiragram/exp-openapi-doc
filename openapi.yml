@@ -1,46 +1,121 @@
-openapi: 3.0.0
+openapi: 3.0.1
 info:
   title: Sample API
-  description: A sample API to illustrate OpenAPI concepts
+  description: A sample API to illustrate OpenAPI specs
   version: 1.0.0
 servers:
   - url: https://api.example.com/v1
-    description: Sample API Server
+    description: Main production server
+  - url: https://staging-api.example.com
+    description: Staging server
+
 paths:
   /users:
     get:
-      summary: Get a list of users
+      summary: Get list of users
+      operationId: getUsers
+      tags:
+        - Users
       responses:
         '200':
-          description: A JSON array of user names
+          description: A list of users
           content:
-            application/json: 
-              schema: 
+            application/json:
+              schema:
                 type: array
-                items: 
-                  type: string
-  /users/{id}:
+                items:
+                  $ref: '#/components/schemas/User'
+    post:
+      summary: Create a new user
+      operationId: createUser
+      tags:
+        - Users
+      requestBody:
+        description: User to be created
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewUser'
+      responses:
+        '201':
+          description: Successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /users/{userId}:
     get:
       summary: Get a user by ID
+      operationId: getUserById
+      tags:
+        - Users
       parameters:
-        - name: id
+        - name: userId
           in: path
           required: true
-          description: ID of the user to retrieve
           schema:
             type: string
       responses:
         '200':
-          description: A single user
+          description: A user object
           content:
-            application/json: 
-              schema: 
-                type: object
-                properties:
-                  id:
-                    type: string
-                  name:
-                    type: string
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+    put:
+      summary: Update a user by ID
+      operationId: updateUser
+      tags:
+        - Users
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        description: User data to be updated
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUser'
+      responses:
+        '200':
+          description: Successfully updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+
+  /users/byRole:
+    get:
+      summary: Get users by role
+      operationId: getUsersByRole
+      tags:
+        - Users
+      parameters:
+        - name: role
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/Role'
+      responses:
+        '200':
+          description: A list of users with the specified role
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
 components:
   schemas:
     User:
@@ -48,5 +123,89 @@ components:
       properties:
         id:
           type: string
-        name:
+          example: "12345"
+        username:
           type: string
+          example: "johndoe"
+        email:
+          type: string
+          format: email
+          example: "johndoe@example.com"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2023-01-01T00:00:00Z"
+        profile:
+          $ref: '#/components/schemas/UserProfile'
+        role:
+          $ref: '#/components/schemas/Role'
+
+    NewUser:
+      type: object
+      required:
+        - username
+        - email
+        - role
+      properties:
+        username:
+          type: string
+          example: "johndoe"
+        email:
+          type: string
+          format: email
+          example: "johndoe@example.com"
+        password:
+          type: string
+          format: password
+        role:
+          $ref: '#/components/schemas/Role'
+
+    UpdateUser:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: '#/components/schemas/Role'
+
+    UserProfile:
+      type: object
+      properties:
+        firstName:
+          type: string
+          example: "John"
+        lastName:
+          type: string
+          example: "Doe"
+        age:
+          type: integer
+          example: 30
+        address:
+          $ref: '#/components/schemas/Address'
+
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+          example: "123 Main St"
+        city:
+          type: string
+          example: "Anytown"
+        state:
+          type: string
+          example: "CA"
+        zip:
+          type: string
+          example: "12345"
+
+    Role:
+      type: string
+      enum:
+        - admin
+        - user
+        - guest
+      example: "user"
